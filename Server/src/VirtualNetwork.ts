@@ -128,7 +128,7 @@ export class VirtualNetword {
         this.views.forEach(view => view.emit('ADD_PACK', udp_pack));
     }
 
-    private views_update_udp_pack(index: number, pack): void {
+    private views_update_udp_pack(index: number, pack: any): void {
         this.views.forEach(view => view.emit('UPDATE_PACK', index, pack));
     }
 
