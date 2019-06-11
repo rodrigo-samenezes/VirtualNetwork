@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/alertify.min.css">
+  <style>
+    .going {
+      background-color: #ffdf75;
+    }
+
+    .delivered {
+      background-color: #2ebb3a;
+    }
+
+    .lost {
+      background-color: #ff8a8a;
+    }
+  </style>
+
+  <title>Hello, world!</title>
+</head>
+
+<body>
+  <div id='app'>
+    <div>
+      <div class='row'>
+        <div class='col-md-2'>
+          <div class='card'>
+            <div class='card-body'>
+              <h5 class='card-title'>Máquinas</h5>
+              <p v-if='IPS.length == 0'>
+                Nenhuma máquina conectada
+              </p>
+              <table class='table' v-if='IPS.length != 0'>
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      #
+                    </th>
+                    <th scope="col">
+                      IP
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for='(ip, index) in IPS'>
+                    <th scope="row">
+                      {{ index + 1}}
+                    </th>
+                    <td>{{ip}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class='card mt-5'>
+            <div class='card-body'>
+              <h5 class='card-title'>Controles</h5>
+              <button class='btn btn-primary btn-block' v-on:click='clear' v-bind:disabled='!canClear'>Limpar</button>
+
+              <div class='mt-3'>
+                <h5 class='h5'>Modo</h5>
+                <div class="form-check">
+                  <input v-bind:disabled='!canClear' v-model='mode' class="form-check-input" type="radio"
+                    name="exampleRadios" id="exampleRadios1" value="normal">
+                  <label class="form-check-label" for="exampleRadios1">
+                    Normal
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input v-bind:disabled='!canClear' v-model='mode' class="form-check-input" type="radio"
+                    name="exampleRadios" id="exampleRadios2" value="random">
+                  <label class="form-check-label" for="exampleRadios2">
+                    Aleatório
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input v-bind:disabled='!canClear' v-model='mode' class="form-check-input" type="radio"
+                    name="exampleRadios" id="exampleRadios2" value="custom">
+                  <label class="form-check-label" for="exampleRadios2">
+                    Personalizado
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class='col-md-10'>
+          <div class='card'>
+            <div class='card-body'>
+              <table class='table'>
+                <thead>
+                  <tr>
+                    <th scope='col'>
+                      #
+                    </th>
+                    <th scope='col'>
+                      Origem
+                    </th>
+                    <th scope='col'>
+                      Destino
+                    </th>
+                    <th scope='col'>
+                      Status
+                    </th>
+                    <th scope='col'>
+                      Mensagem
+                    </th>
+                    <th scope='col' v-if='mode == "custom"'>
+                      Opções
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for='(udp_pack, index) in reverse_udp_packs' v-on:click='showUdpDetails(udp_pack)'
+                    v-bind:class="{going: udp_pack.status == 'going', lost: udp_pack.status == 'lost', delivered: udp_pack.status == 'delivered'}">
+                    <th scope="row">{{ udp_packs.length - (index + 1) }}</th>
+                    <td>{{ udp_pack.origin.ip }}<br>{{ udp_pack.origin.port }}</td>
+                    <td>{{ udp_pack.real }}<br>{{ udp_pack.destination.port }}</td>
+                    <td>{{ udp_pack.status }}</td>
+                    <td>{{ udp_pack.data }}</td>
+                    <td v-if='mode == "custom"'>
+                      <div v-if='udp_pack.status == "going"'>
+                        <button v-on:click='$event.stopPropagation(); set_udp_status(udp_packs.length - (index + 1), "lost")' class='btn btn-outline lost'>X</button>
+                        <button v-on:click='$event.stopPropagation(); set_udp_status(udp_packs.length - (index + 1), "delivered")' class='btn btn-outline delivered'>V</button>
+                      </div>
+
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="modal" id="updModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content" v-if='selectedUdp'>
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              {{ selectedUdp.origin.ip }}:{{ selectedUdp.origin.port }} ->
+              {{ selectedUdp.real }}:{{ selectedUdp.destination.port }}
+            </h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <pre>
+{{ JSON.parse(selectedUdp.data) }}
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <!--script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script-->
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/alertify.min.js"></script>
+  <script src="/js/vue.js"></script>
+  <script>
+    function udpDataToString(udp) {
+      udp.data = String.fromCharCode.apply(null, new Uint8Array(udp.data));
+      return udp;
+    }
+    let socket;
+
+    Vue.filter('reverse', function (arr) {
+      return arr.reverse();
+    });
+
+    const app = new Vue({
+      el: '#app',
+      data: {
+        IPS: [],
+        udp_packs: [],
+        selectedUdp: null,
+        mode: ''
+      },
+      watch: {
+        mode: function (val) {
+          socket.emit('change_mode', val);
+        }
+      },
+      computed: {
+        reverse_udp_packs: function () {
+          return this.udp_packs.slice().reverse();
+        },
+        canClear: function () {
+          const result = this.udp_packs.find(u => u.status == 'going');
+          return !result;
+        }
+      },
+      methods: {
+        showUdpDetails: function (udp_pack) {
+          app.selectedUdp = udp_pack;
+          $('#updModal').modal('show');
+        },
+        clear: function () {
+          socket.emit('clear');
+        },
+        set_udp_status: function(index, status){
+          socket.emit('set_udp_status', index, status)
+        }
+      },
+      created() {
+        socket = io.connect('http://localhost:3000/view');
+        socket.on('INITIAL', function (novosIps, udp_packs, mode) {
+          app.IPS = novosIps;
+          app.udp_packs = udp_packs.map(udp => udpDataToString(udp));
+          app.mode = mode;
+        });
+        socket.on('IP_IN', (ip) => {
+          alertify.success(`IP "${ip}" entrou na rede.`);
+          app.IPS.push(ip);
+        });
+        socket.on('IP_OUT', (ip) => {
+          alertify.error(`IP "${ip}" saiu na rede.`);
+          app.IPS.splice(app.IPS.indexOf(ip), 1);
+        });
+        socket.on('ADD_PACK', (udp_pack) => {
+          app.udp_packs.push(udpDataToString(udp_pack));
+        });
+        socket.on('UPDATE_PACK', (index, udp_pack) => {
+          console.log(index, udp_pack);
+          Vue.set(app.udp_packs, index, udpDataToString(udp_pack));
+        });
+      },
+    });
+
+  </script>
+</body>
+
+</html>
