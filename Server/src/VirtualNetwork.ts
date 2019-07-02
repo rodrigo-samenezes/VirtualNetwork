@@ -50,7 +50,7 @@ export class VirtualNetword {
                 else if (status == 'delivered') {
                     const destinationIp = udp_pack.destination.ip == '255.255.255.255' ? udp_pack.real : udp_pack.destination.ip;
                     const client = this.clients.find(x => x.ip == destinationIp);
-                    if (client){
+                    if (client) {
                         udp_pack.status = 'delivered';
                         client.socket.emit('udp', udp_pack);
                     }
@@ -87,28 +87,29 @@ export class VirtualNetword {
     }
 
     private processUdpPack(udp_pack: UDP_Package): void {
-        if (udp_pack.destination.ip == '255.255.255.255') {
-            [...this.clients].sort(_ => Math.random() - 0.5).forEach((client) => {
-                const packToList = { ...udp_pack, real: client.ip, status: 'going' };
-                this.listOfUdpPacks.push(packToList);
-                this.views_add_udp_pack(packToList);
-                if (this.operationMode != 'custom') {
-                    setTimeout(() => {
-                        if (this.operationMode == 'random') {
-                            packToList.status = 'delivered';//Math.random() > 0.6 ? 'lost' : 'delivered';
-                        }
-                        else {
-                            packToList.status = 'delivered';
-                        }
+        //if (udp_pack.destination.ip == '255.255.255.255')
+        const vetor = udp_pack.destination.ip == '255.255.255.255' ? [...this.clients] : [this.clients.find(x => x.ip == udp_pack.destination.ip)];
+        vetor.sort(_ => Math.random() - 0.5).forEach((client) => {
+            const packToList = { ...udp_pack, real: client.ip, status: 'going' };
+            this.listOfUdpPacks.push(packToList);
+            this.views_add_udp_pack(packToList);
+            if (this.operationMode != 'custom') {
+                setTimeout(() => {
+                    if (this.operationMode == 'random') {
+                        packToList.status = 'delivered';//Math.random() > 0.6 ? 'lost' : 'delivered';
+                    }
+                    else {
+                        packToList.status = 'delivered';
+                    }
 
-                        if (packToList.status == 'delivered'){
-                            client.socket.emit('udp', udp_pack);
-                        }
-                        this.views_update_udp_pack(this.listOfUdpPacks.indexOf(packToList), packToList);
-                    }, this.operationMode == 'normal' ? 1 : Math.random() * 3000);
-                }
-            });
-        }
+                    if (packToList.status == 'delivered') {
+                        client.socket.emit('udp', udp_pack);
+                    }
+                    this.views_update_udp_pack(this.listOfUdpPacks.indexOf(packToList), packToList);
+                }, this.operationMode == 'normal' ? 1 : Math.random() * 3000);
+            }
+        });
+
         /*
         const toCiente = this.clients.find(x => x.ip == udp_pack.destination.ip);
         if (toCiente) {

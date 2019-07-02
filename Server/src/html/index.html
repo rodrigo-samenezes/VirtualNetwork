@@ -88,13 +88,16 @@
                   </label>
                 </div>
               </div>
+              <div class='mt-5'>
+                V - 0.2
+              </div>
             </div>
           </div>
         </div>
         <div class='col-md-10'>
           <div class='card'>
             <div class='card-body'>
-              <table class='table'>
+              <table class='table table-sm'>
                 <thead>
                   <tr>
                     <th scope='col'>
@@ -220,7 +223,7 @@
         }
       },
       created() {
-        socket = io.connect('http://localhost:3000/view');
+        socket = io.connect('/view');
         socket.on('INITIAL', function (novosIps, udp_packs, mode) {
           app.IPS = novosIps;
           app.udp_packs = udp_packs.map(udp => udpDataToString(udp));
