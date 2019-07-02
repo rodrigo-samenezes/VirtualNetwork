@@ -81,27 +81,26 @@ var VirtualNetword = (function () {
     };
     VirtualNetword.prototype.processUdpPack = function (udp_pack) {
         var _this = this;
-        if (udp_pack.destination.ip == '255.255.255.255') {
-            this.clients.slice().sort(function (_) { return Math.random() - 0.5; }).forEach(function (client) {
-                var packToList = __assign({}, udp_pack, { real: client.ip, status: 'going' });
-                _this.listOfUdpPacks.push(packToList);
-                _this.views_add_udp_pack(packToList);
-                if (_this.operationMode != 'custom') {
-                    setTimeout(function () {
-                        if (_this.operationMode == 'random') {
-                            packToList.status = 'delivered';
-                        }
-                        else {
-                            packToList.status = 'delivered';
-                        }
-                        if (packToList.status == 'delivered') {
-                            client.socket.emit('udp', udp_pack);
-                        }
-                        _this.views_update_udp_pack(_this.listOfUdpPacks.indexOf(packToList), packToList);
-                    }, _this.operationMode == 'normal' ? 1 : Math.random() * 3000);
-                }
-            });
-        }
+        var vetor = udp_pack.destination.ip == '255.255.255.255' ? this.clients.slice() : [this.clients.find(function (x) { return x.ip == udp_pack.destination.ip; })];
+        vetor.sort(function (_) { return Math.random() - 0.5; }).forEach(function (client) {
+            var packToList = __assign({}, udp_pack, { real: client.ip, status: 'going' });
+            _this.listOfUdpPacks.push(packToList);
+            _this.views_add_udp_pack(packToList);
+            if (_this.operationMode != 'custom') {
+                setTimeout(function () {
+                    if (_this.operationMode == 'random') {
+                        packToList.status = 'delivered';
+                    }
+                    else {
+                        packToList.status = 'delivered';
+                    }
+                    if (packToList.status == 'delivered') {
+                        client.socket.emit('udp', udp_pack);
+                    }
+                    _this.views_update_udp_pack(_this.listOfUdpPacks.indexOf(packToList), packToList);
+                }, _this.operationMode == 'normal' ? 1 : Math.random() * 3000);
+            }
+        });
     };
     VirtualNetword.prototype.views_sendInitialData = function () {
         var _this = this;
