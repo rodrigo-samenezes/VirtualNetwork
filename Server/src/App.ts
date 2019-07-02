@@ -29,8 +29,8 @@ export class App {
 
         this.io.of('/view').on('connection', (socket) => this.virtualNetwork.addView(socket));
 
-        this.http.listen(process.env.PORT_INDEX || 3000, function () {
-            console.log('listening on *:', process.env.PORT_INDEX || 3000);
+        this.http.listen(process.env.PORT_INDEX || 21246, function () {
+            console.log('listening on *:', process.env.PORT_INDEX || 21246);
         });
     }
 }
